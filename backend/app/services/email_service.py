@@ -18,16 +18,31 @@ def get_ipv4_address(hostname: str) -> str:
 
 # Email Configuration
 # Resolving IP to valid IPv4 to avoid Render IPv6 Timeouts
+def get_ipv4_address(hostname: str) -> str:
+    try:
+        # Resolve to IPv4 (AF_INET)
+        # Using getaddrinfo to specifically request IPv4 addresses
+        addr_info = socket.getaddrinfo(hostname, None, socket.AF_INET)
+        if addr_info:
+            # Return the first IPv4 address found
+            ip = addr_info[0][4][0]
+            print(f"DEBUG: Resolved {hostname} to IPv4: {ip}")
+            return ip
+        return hostname
+    except Exception as e:
+        print(f"DEBUG: Failed to resolve {hostname} to IPv4: {e}")
+        return hostname
+
 smtp_host = get_ipv4_address("smtp.gmail.com")
 
 conf = ConnectionConfig(
     MAIL_USERNAME=settings.MAIL_USERNAME,
     MAIL_PASSWORD=settings.MAIL_PASSWORD,
     MAIL_FROM=settings.MAIL_FROM,
-    MAIL_PORT=587,
+    MAIL_PORT=settings.MAIL_PORT,
     MAIL_SERVER=smtp_host,
-    MAIL_STARTTLS=True,
-    MAIL_SSL_TLS=False,
+    MAIL_STARTTLS=settings.MAIL_PORT == 587,
+    MAIL_SSL_TLS=settings.MAIL_PORT == 465,
     USE_CREDENTIALS=True,
     VALIDATE_CERTS=True
 )
@@ -43,9 +58,6 @@ import ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from fastapi.concurrency import run_in_threadpool
-
-# Remove fastapi_mail imports if no longer needed for other things, 
-# or keep them if used elsewhere. For this function, we don't need them.
 
 async def send_resume_feedback_email(to_email: str, analysis: Dict, job_role: str):
     """Generates a detailed HTML email and sends it using standard smtplib."""
@@ -64,16 +76,15 @@ async def send_resume_feedback_email(to_email: str, analysis: Dict, job_role: st
     email_uid = str(uuid.uuid4())[:8]
     current_year = datetime.datetime.now().year
 
-    # HTML Template (Reused)
+    # HTML Template
     html_content = f"""
     <!DOCTYPE html>
-    <html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office">
+    <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width,initial-scale=1">
         <title>CareerSync Analysis</title>
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-        <!-- Styles preserved from previous version -->
     </head>
     <body style="font-family: 'Inter', sans-serif; line-height: 1.6; margin: 0; padding: 0; width: 100%; background-color: #f8fafc; color: #0f172a;">
         <center style="width: 100%; table-layout: fixed; background-color: #f8fafc; padding-bottom: 40px;">
@@ -176,28 +187,37 @@ async def send_resume_feedback_email(to_email: str, analysis: Dict, job_role: st
     def send_sync():
         try:
             # Resolve IP first to avoid IPv6 issues on Render
-            smtp_host = get_ipv4_address(settings.MAIL_SERVER) 
-            # Fallback for 'smtp' vs 'smtps' port logic if needed, but 465 is usually fixed for SSL.
+            actual_host = settings.MAIL_SERVER
+            smtp_ip = get_ipv4_address(actual_host) 
+            port = int(settings.MAIL_PORT)
             
-            print(f"DEBUG: Connecting to {smtp_host} ({settings.MAIL_SERVER}) on port 465 (SSL)...")
+            print(f"DEBUG: Attempting SMTP connection to {smtp_ip} ({actual_host}) on port {port}...")
             
             msg = MIMEMultipart("alternative")
             msg["Subject"] = f"Executive Report: {job_role} Portfolio Analysis"
             msg["From"] = settings.MAIL_FROM
             msg["To"] = to_email
-
             msg.attach(MIMEText(html_content, "html"))
 
-            # Create secure SSL context
             context = ssl.create_default_context()
             
-            # Use IPv4 IP address explicitly
-            with smtplib.SMTP_SSL(smtp_host, 465, context=context, timeout=30) as server:
-                print("DEBUG: Connected. Logging in...")
-                server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
-                print("DEBUG: Logged in. Sending mail...")
-                server.send_message(msg)
-                print("DEBUG: Email sent successfully via smtplib!")
+            if port == 465:
+                # SSL Port
+                with smtplib.SMTP_SSL(smtp_ip, port, context=context, timeout=30) as server:
+                    print(f"DEBUG: Connected to {port} (SSL). Logging in...")
+                    server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
+                    server.send_message(msg)
+                    print("DEBUG: Email sent successfully via SSL!")
+            else:
+                # TLS Port (usually 587) or others
+                with smtplib.SMTP(smtp_ip, port, timeout=30) as server:
+                    print(f"DEBUG: Connected to {port}. Starting TLS...")
+                    if port == 587:
+                        server.starttls(context=context)
+                    print("DEBUG: Logging in...")
+                    server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
+                    server.send_message(msg)
+                    print(f"DEBUG: Email sent successfully via port {port}!")
                 
         except Exception as e:
             print(f"❌ Custom SMTP Error: {str(e)}")
