@@ -12,3 +12,4 @@ python-multipart
 pymupdf
 fastapi-mail
 jinja2
+google-search-results
