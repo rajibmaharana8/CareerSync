@@ -205,7 +205,7 @@ async def send_resume_feedback_email(to_email: str, analysis: Dict, job_role: st
                 # SSL Port
                 # Use actual_host for SSL verification to avoid IP mismatch
                 with smtplib.SMTP_SSL(smtp_ip, port, context=context, timeout=30) as server:
-                    # Manually set the hostname for SSL verification if using IP to connect
+                    # Manually set the hostname for SSL verification because we used an IP to connect
                     server._host = actual_host
                     print(f"DEBUG: Connected to {port} (SSL). Logging in...")
                     server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
@@ -216,8 +216,9 @@ async def send_resume_feedback_email(to_email: str, analysis: Dict, job_role: st
                 with smtplib.SMTP(smtp_ip, port, timeout=30) as server:
                     print(f"DEBUG: Connected to {port}. Starting TLS...")
                     if port == 587:
-                        # Use actual_host for TLS verification to avoid IP mismatch
-                        server.starttls(context=context, server_hostname=actual_host)
+                        # Manually set the hostname for TLS verification (SNI)
+                        server._host = actual_host
+                        server.starttls(context=context)
                     print("DEBUG: Logging in...")
                     server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
                     server.send_message(msg)
