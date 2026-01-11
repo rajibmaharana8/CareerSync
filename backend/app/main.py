@@ -39,4 +39,26 @@ app.include_router(interview.router, prefix="/api/v1/interview", tags=["Intervie
 @app.get("/")
 def root():
     return {"message": "CareerSync Backend Running 🚀"}
- 
+
+@app.get("/test-email")
+async def test_email_endpoint():
+    try:
+        from app.services.email_service import conf, FastMail, MessageSchema, MessageType
+        
+        # Debugging Info (Masking Password)
+        masked_pwd = settings.MAIL_PASSWORD[:2] + "****" if settings.MAIL_PASSWORD else "None"
+        print(f"Testing email to {settings.MAIL_FROM}")
+        print(f"Config: User={settings.MAIL_USERNAME}, Server={settings.MAIL_SERVER}:{settings.MAIL_PORT}, SSL={conf.USE_CREDENTIALS}")
+        
+        message = MessageSchema(
+            subject="CareerSync Email Test",
+            recipients=[settings.MAIL_FROM],
+            body="If you received this, email sending is working!",
+            subtype=MessageType.text
+        )
+        fm = FastMail(conf)
+        await fm.send_message(message)
+        return {"status": "success", "message": f"Email sent to {settings.MAIL_FROM}"}
+    except Exception as e:
+        print(f"Test Email Failed: {str(e)}")
+        return {"status": "error", "detail": str(e), "config_user": settings.MAIL_USERNAME}
