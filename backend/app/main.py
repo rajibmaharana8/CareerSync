@@ -54,7 +54,7 @@ async def test_email_endpoint():
             subject="CareerSync Email Test",
             recipients=[settings.MAIL_FROM],
             body="If you received this, email sending is working!",
-            subtype=MessageType.text
+            subtype=MessageType.plain
         )
         fm = FastMail(conf)
         await fm.send_message(message)
