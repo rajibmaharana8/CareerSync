@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Point to your FastAPI Backend URL
-const API_URL = "http://127.0.0.1:8000/api/v1";
+// Point to your Backend URL (Use Env Var for Vercel/Render)
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api/v1";
 
 // --- RESUME ANALYZER APIs ---
 export const analyzeResume = async (file, email, jobRole) => {
