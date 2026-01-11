@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+pydantic
+pydantic-settings
+python-dotenv
+langchain
+langchain-community
+langchain-google-genai
+python-multipart
+pymupdf
+fastapi-mail
+jinja2

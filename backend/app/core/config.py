@@ -1,0 +1,22 @@
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    PROJECT_NAME: str = "CareerSync"
+    
+    # Secrets from .env
+    DATABASE_URL: str
+    GOOGLE_API_KEY: str
+    SERPAPI_KEY: str = ""
+    
+    # Email Config
+    MAIL_USERNAME: str
+    MAIL_PASSWORD: str
+    MAIL_FROM: str
+    MAIL_PORT: int = 587
+    MAIL_SERVER: str = "smtp.gmail.com"
+
+    class Config:
+        env_file = ".env"
+        extra = "ignore" 
+
+settings = Settings()
