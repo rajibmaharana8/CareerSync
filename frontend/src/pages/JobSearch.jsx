@@ -665,9 +665,9 @@ const JobSearch = () => {
                                     }}
                                     className="tag"
                                     style={{
-                                        background: selectedPlatforms.length === ALL_PLATFORMS.length ? 'var(--primary-gradient)' : 'rgba(255,255,255,0.05)',
-                                        color: selectedPlatforms.length === ALL_PLATFORMS.length ? '#0c111d' : 'var(--text-main)',
-                                        border: '1px solid var(--border)',
+                                        background: selectedPlatforms.length === ALL_PLATFORMS.length ? 'rgba(197, 160, 89, 0.2)' : 'rgba(255,255,255,0.05)',
+                                        color: selectedPlatforms.length === ALL_PLATFORMS.length ? 'var(--primary)' : 'var(--text-main)',
+                                        border: selectedPlatforms.length === ALL_PLATFORMS.length ? '1px solid var(--primary)' : '1px solid var(--border)',
                                         cursor: 'pointer'
                                     }}
                                 >
@@ -690,14 +690,14 @@ const JobSearch = () => {
                                             style={{
                                                 padding: '8px 16px',
                                                 fontSize: '0.75rem',
-                                                background: isSelected ? 'var(--primary-gradient)' : 'rgba(255,255,255,0.05)',
-                                                color: isSelected ? '#0c111d' : 'var(--text-muted)',
-                                                border: isSelected ? 'none' : '1px solid var(--border)',
+                                                background: isSelected ? 'rgba(197, 160, 89, 0.2)' : 'rgba(255,255,255,0.05)',
+                                                color: isSelected ? 'var(--primary)' : 'var(--text-muted)',
+                                                border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border)',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 gap: '6px',
                                                 cursor: 'pointer',
-                                                boxShadow: isSelected ? '0 5px 15px rgba(197, 160, 89, 0.2)' : 'none'
+                                                boxShadow: isSelected ? '0 5px 15px rgba(197, 160, 89, 0.1)' : 'none'
                                             }}
                                         >
                                             {platform}
@@ -923,4 +923,3 @@ const JobSearch = () => {
 };
 
 export default JobSearch;
-
