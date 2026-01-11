@@ -175,7 +175,11 @@ async def send_resume_feedback_email(to_email: str, analysis: Dict, job_role: st
 
     def send_sync():
         try:
-            print(f"DEBUG: Connecting to {settings.MAIL_SERVER} on port 465 (SSL)...")
+            # Resolve IP first to avoid IPv6 issues on Render
+            smtp_host = get_ipv4_address(settings.MAIL_SERVER) 
+            # Fallback for 'smtp' vs 'smtps' port logic if needed, but 465 is usually fixed for SSL.
+            
+            print(f"DEBUG: Connecting to {smtp_host} ({settings.MAIL_SERVER}) on port 465 (SSL)...")
             
             msg = MIMEMultipart("alternative")
             msg["Subject"] = f"Executive Report: {job_role} Portfolio Analysis"
@@ -187,8 +191,8 @@ async def send_resume_feedback_email(to_email: str, analysis: Dict, job_role: st
             # Create secure SSL context
             context = ssl.create_default_context()
             
-            # Use SMTP_SSL for Port 465
-            with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context, timeout=30) as server:
+            # Use IPv4 IP address explicitly
+            with smtplib.SMTP_SSL(smtp_host, 465, context=context, timeout=30) as server:
                 print("DEBUG: Connected. Logging in...")
                 server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
                 print("DEBUG: Logged in. Sending mail...")
