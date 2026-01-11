@@ -185,47 +185,47 @@ async def send_resume_feedback_email(to_email: str, analysis: Dict, job_role: st
     """
 
     def send_sync():
-        try:
-            # Resolve IP first to avoid IPv6 issues on Render
-            actual_host = settings.MAIL_SERVER
-            smtp_ip = get_ipv4_address(actual_host) 
-            port = int(settings.MAIL_PORT)
-            
-            print(f"DEBUG: STARTING SMTP SESSION - Port: {port}, Target: {smtp_ip} ({actual_host})")
-            
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = f"Executive Report: {job_role} Portfolio Analysis"
-            msg["From"] = settings.MAIL_FROM
-            msg["To"] = to_email
-            msg.attach(MIMEText(html_content, "html"))
+        # Try both the configured server and a fallback Gmail server
+        servers_to_try = [settings.MAIL_SERVER, "smtp.googlemail.com"]
+        port = int(settings.MAIL_PORT)
+        last_error = None
 
-            context = ssl.create_default_context()
-            
-            # Use the resolved IP if possible, fallback to hostname if any connection error occurs
-            target = smtp_ip if smtp_ip else actual_host
-
-            if port == 465:
-                # SSL Port
-                print(f"DEBUG: Attempting SMTP_SSL connection to {target}:{port}")
-                with smtplib.SMTP_SSL(target, port, context=context, timeout=30) as server:
-                    server._host = actual_host
-                    server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
-                    server.send_message(msg)
-                    print("DEBUG: Email sent successfully via SSL (465)!")
-            else:
-                # TLS Port (usually 587)
-                print(f"DEBUG: Attempting SMTP connection to {target}:{port}")
-                with smtplib.SMTP(target, port, timeout=30) as server:
-                    if port == 587:
-                        server._host = actual_host
-                        server.starttls(context=context)
-                    server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
-                    server.send_message(msg)
-                    print(f"DEBUG: Email sent successfully via Port {port}!")
+        for host in servers_to_try:
+            try:
+                print(f"DEBUG: Attempting SMTP connection to {host}:{port}...")
                 
-        except Exception as e:
-            print(f"❌ Custom SMTP Error: {str(e)}")
-            raise e
+                msg = MIMEMultipart("alternative")
+                msg["Subject"] = f"Executive Report: {job_role} Portfolio Analysis"
+                msg["From"] = settings.MAIL_FROM
+                msg["To"] = to_email
+                msg.attach(MIMEText(html_content, "html"))
+
+                context = ssl.create_default_context()
+                
+                if port == 465:
+                    with smtplib.SMTP_SSL(host, port, context=context, timeout=20) as server:
+                        server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
+                        server.send_message(msg)
+                        print(f"DEBUG: Email sent successfully via {host} (SSL 465)!")
+                        return
+                else:
+                    with smtplib.SMTP(host, port, timeout=20) as server:
+                        if port == 587:
+                            server.starttls(context=context)
+                        server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
+                        server.send_message(msg)
+                        print(f"DEBUG: Email sent successfully via {host} (Port {port})!")
+                        return
+            except Exception as e:
+                print(f"DEBUG: Failed to connect to {host}: {str(e)}")
+                last_error = e
+                continue # Try the next server
+        
+        # If we get here, all servers failed
+        if last_error:
+            raise last_error
+        else:
+            raise Exception("No SMTP servers were reachable")
 
     # Run blocking SMTP call in a thread to avoid blocking asyncio loop
     await run_in_threadpool(send_sync)
