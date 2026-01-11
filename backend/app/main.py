@@ -7,8 +7,18 @@ from app.models.interview import InterviewSession  # Ensure interview model is r
 
 from fastapi.middleware.cors import CORSMiddleware
 
-# Create Tables in Supabase (Automatic Migration)
-Base.metadata.create_all(bind=engine)
+# Create Tables with Error Handling
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    print(f"❌ Database Connection Error: {e}")
+    if "Network is unreachable" in str(e):
+        print("\n⚠️  RENDER/SUPABASE CONFIGURATION ISSUE DETECTED ⚠️")
+        print("It appears you are connecting to Supabase via IPv6, which Render does not fully support.")
+        print("👉 SOLUTION: Update your DATABASE_URL in Render to use the 'Connection Pooler' string.")
+        print("   Shape: postgresql://[user]:[pass]@[aws-region].pooler.supabase.com:6543/[db]")
+        print("   Find it in: Supabase Dashboard > Project Settings > Database > Connection String > Pooler\n")
+    raise e
 
 app = FastAPI(title="CareerSync API")
 
