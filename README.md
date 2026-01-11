@@ -1,39 +1,57 @@
-# CareerSync 🚀
+# CareerSync: AI-Powered Career Assistant
 
-CareerSync is a comprehensive, AI-powered platform designed to streamline your career journey. From analyzing your resume to preparing for interviews and finding the perfect job, CareerSync provides the tools you need to succeed.
+> **Optimize your resume, find your dream job, and ace the interview—all in one place.**
 
-## ✨ Features
+CareerSync is a full-stack AI application designed to streamline the entire job search lifecycle. It leverages Google's **Gemini LLM** to provide intelligent resume analysis, automated job matching, and realistic AI mock interviews.
 
-*   **📄 AI Resume Analyzer**: Upload your resume (PDF) and get detailed feedback, ATS score, and improvement suggestions using Google Gemini AI.
-*   **🤖 Interview Preparation**: Practice answering interview questions with AI-generated feedback to boost your confidence.
-*   **🔍 Job Search**: Find relevant job openings tailored to your profile (Integration pending/in-progress).
-*   **📧 Email Reports**: Receive detailed analysis reports directly in your inbox.
+---
 
-## 🛠️ Tech Stack
+## Features
+
+### 1. AI Resume Analyzer
+* **ATS Scoring:** Upload your PDF resume to get a match score (0-100%) against a specific job description.
+* **Detailed Feedback:** Receive AI-generated insights on missing keywords, formatting errors, and structural improvements.
+* **Email Reports:** Automatically sends a detailed analysis report to your email.
+
+### 2. Smart Job Search
+* **Manual Search:** Search for jobs by Role, Location, and Experience with advanced time filters (Past 24h, Week, Month).
+* **Powered by SerpAPI:** Fetches real-time job listings from across the web via Google Jobs integration.
+* **Rich Job Details:** View salaries, job types, and direct application links.
+
+### 3. AI Mock Interviewer
+* **Context-Aware Chat:** An interactive AI agent acts as a technical interviewer based on your target role and difficulty level.
+* **Real-Time Feedback:** Get immediate ratings and constructive criticism on your answers.
+* **Session History:** Review past interview transcripts to track your progress.
+
+---
+
+## Tech Stack
 
 ### Frontend
-*   **React** (Vite)
-*   **React Router** for navigation
-*   **Axios** for API requests
-*   **CSS/Styled Components** (Standard CSS or styling libraries)
+* **React.js (Vite):** Fast and modern UI library.
+* **React Router:** For seamless navigation between modules.
+* **Axios:** For handling API requests.
+* **CSS / Tailwind:** Modern styling for a responsive design.
 
 ### Backend
-*   **FastAPI**: High-performance web framework for building APIs.
-*   **PostgreSQL** & **SQLAlchemy**: Robust database management.
-*   **LangChain** & **Google Gemini**: Powering the AI features.
-*   **PyMuPDF**: For extracting text from PDF resumes.
-*   **FastAPI-Mail**: For sending email notifications.
-*   **Pydantic**: Data validation and settings management.
+* **FastAPI (Python):** High-performance web framework for APIs.
+* **LangChain:** Orchestrates the AI logic and chat history.
+* **Google Gemini (1.5 Flash):** The LLM powering the intelligence.
+* **PostgreSQL:** Robust relational database for storing saved jobs and interview sessions (via `psycopg2`).
+* **SerpAPI:** Fetches real-time job listings.
+* **PyMuPDF:** Efficient PDF text extraction for resume analysis.
+* **FastAPI-Mail:** Handles automated email notifications.
 
-## 🚀 Getting Started
+---
 
-Follow these steps to set up the project locally.
+## Getting Started
+
+Follow these instructions to set up the project locally.
 
 ### Prerequisites
-*   Python 3.8+
-*   Node.js & npm
-*   PostgreSQL installed and running
-*   Google Gemini API Key
+* Node.js & npm installed
+* Python 3.9+ installed
+* PostgreSQL service running
 
 ### 1. Clone the Repository
 ```bash
@@ -66,15 +84,19 @@ pip install -r requirements.txt
 Set up Environment Variables:
 Create a `.env` file in the `backend` directory and add the following keys:
 ```env
+# Database
 DATABASE_URL=postgresql://user:password@localhost/dbname
+
+# AI & Search
 GOOGLE_API_KEY=your_google_api_key
+SERPAPI_KEY=your_serpapi_key
+
+# Email Service
 MAIL_USERNAME=your_email
-MAIL_PASSWORD=your_password
+MAIL_PASSWORD=your_app_password
 MAIL_FROM=your_email
 MAIL_PORT=587
 MAIL_SERVER=smtp.gmail.com
-SECRET_KEY=your_secret_key
-# Add other necessary keys
 ```
 
 Run the backend server:
@@ -98,7 +120,12 @@ Run the development server:
 ```bash
 npm run dev
 ```
-The application will run at `http://localhost:5173` (default Vite port).
+The application will run at `http://localhost:5173`.
 
-## 🤝 Contributing
+---
+
+## Contributing
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+This project is licensed under the MIT License.
