@@ -4,14 +4,28 @@ from typing import Dict, List
 import datetime
 
 # Email Configuration
+import socket
+
+def get_ipv4_address(hostname: str) -> str:
+    try:
+        # Resolve to IPv4 (AF_INET)
+        ip = socket.gethostbyname(hostname)
+        print(f"DEBUG: Resolved {hostname} to {ip}")
+        return ip
+    except Exception as e:
+        print(f"DEBUG: Failed to resolve {hostname}: {e}")
+        return hostname
+
 # Email Configuration
-# Retrying Port 587 with smtp.googlemail.com alias
+# Resolving IP to valid IPv4 to avoid Render IPv6 Timeouts
+smtp_host = get_ipv4_address("smtp.gmail.com")
+
 conf = ConnectionConfig(
     MAIL_USERNAME=settings.MAIL_USERNAME,
     MAIL_PASSWORD=settings.MAIL_PASSWORD,
     MAIL_FROM=settings.MAIL_FROM,
     MAIL_PORT=587,
-    MAIL_SERVER="smtp.googlemail.com", # Alternative hostname
+    MAIL_SERVER=smtp_host,
     MAIL_STARTTLS=True,
     MAIL_SSL_TLS=False,
     USE_CREDENTIALS=True,
