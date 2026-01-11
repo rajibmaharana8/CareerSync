@@ -464,22 +464,43 @@ h1 {
     right: 20px !important;
   }
 
-  header div:first-child {
-    padding: 20px 15px 10px !important;
+  /* New Mobile Header Optimizations */
+  .brand-container {
+    padding: 15px 10px 10px !important;
   }
 
-  header h1 {
-    font-size: 1.8rem !important;
+  .brand-container h1 {
+    font-size: 1.6rem !important;
+    letter-spacing: 1px !important;
   }
 
-  header p {
-    font-size: 0.7rem !important;
-    letter-spacing: 1.5px !important;
+  .brand-container p {
+    font-size: 0.6rem !important;
+    letter-spacing: 1px !important;
+    margin-top: 4px !important;
   }
 
-  nav {
+  .main-nav {
     padding: 10px 15px !important;
-    gap: 10px !important;
+    justify-content: flex-start !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    /* Hide scrollbar */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .main-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .main-nav a {
+    padding: 8px 16px !important;
+    font-size: 0.7rem !important;
+    flex-shrink: 0;
+    /* Prevent squishing */
   }
 
   .input-field {

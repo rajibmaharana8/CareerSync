@@ -127,7 +127,7 @@ function App() {
                 <ThemeToggle theme={theme} toggleTheme={toggleTheme} rotation={rotation} />
 
                 {/* Header with CareerSync Branding */}
-                <header style={{
+                <header className="app-header" style={{
                     background: 'var(--glass-bg)',
                     borderBottom: '1px solid var(--glass-border)',
                     backdropFilter: 'blur(30px)',
@@ -136,7 +136,7 @@ function App() {
                     zIndex: 100
                 }}>
                     {/* CareerSync Title */}
-                    <div style={{
+                    <div className="brand-container" style={{
                         textAlign: 'center',
                         padding: '30px 20px 20px',
                         borderBottom: '1px solid var(--border)'
@@ -166,12 +166,11 @@ function App() {
                     </div>
 
                     {/* Navigation Sections */}
-                    <nav style={{
+                    <nav className="main-nav" style={{
                         padding: '15px 20px',
                         display: 'flex',
                         gap: '15px',
-                        justifyContent: 'center',
-                        flexWrap: 'wrap'
+                        justifyContent: 'center'
                     }}>
                         <NavLink to="/">Resume Analyzer</NavLink>
                         <NavLink to="/jobs">Job Search</NavLink>
