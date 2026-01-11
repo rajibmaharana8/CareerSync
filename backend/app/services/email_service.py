@@ -191,7 +191,7 @@ async def send_resume_feedback_email(to_email: str, analysis: Dict, job_role: st
             smtp_ip = get_ipv4_address(actual_host) 
             port = int(settings.MAIL_PORT)
             
-            print(f"DEBUG: Attempting SMTP connection to {smtp_ip} ({actual_host}) on port {port}...")
+            print(f"DEBUG: STARTING SMTP SESSION - Port: {port}, Target: {smtp_ip} ({actual_host})")
             
             msg = MIMEMultipart("alternative")
             msg["Subject"] = f"Executive Report: {job_role} Portfolio Analysis"
@@ -201,28 +201,27 @@ async def send_resume_feedback_email(to_email: str, analysis: Dict, job_role: st
 
             context = ssl.create_default_context()
             
+            # Use the resolved IP if possible, fallback to hostname if any connection error occurs
+            target = smtp_ip if smtp_ip else actual_host
+
             if port == 465:
                 # SSL Port
-                # Use actual_host for SSL verification to avoid IP mismatch
-                with smtplib.SMTP_SSL(smtp_ip, port, context=context, timeout=30) as server:
-                    # Manually set the hostname for SSL verification because we used an IP to connect
+                print(f"DEBUG: Attempting SMTP_SSL connection to {target}:{port}")
+                with smtplib.SMTP_SSL(target, port, context=context, timeout=30) as server:
                     server._host = actual_host
-                    print(f"DEBUG: Connected to {port} (SSL). Logging in...")
                     server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
                     server.send_message(msg)
-                    print("DEBUG: Email sent successfully via SSL!")
+                    print("DEBUG: Email sent successfully via SSL (465)!")
             else:
-                # TLS Port (usually 587) or others
-                with smtplib.SMTP(smtp_ip, port, timeout=30) as server:
-                    print(f"DEBUG: Connected to {port}. Starting TLS...")
+                # TLS Port (usually 587)
+                print(f"DEBUG: Attempting SMTP connection to {target}:{port}")
+                with smtplib.SMTP(target, port, timeout=30) as server:
                     if port == 587:
-                        # Manually set the hostname for TLS verification (SNI)
                         server._host = actual_host
                         server.starttls(context=context)
-                    print("DEBUG: Logging in...")
                     server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
                     server.send_message(msg)
-                    print(f"DEBUG: Email sent successfully via port {port}!")
+                    print(f"DEBUG: Email sent successfully via Port {port}!")
                 
         except Exception as e:
             print(f"❌ Custom SMTP Error: {str(e)}")
