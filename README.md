@@ -50,7 +50,7 @@ Follow these instructions to set up the project locally.
 
 ### Prerequisites
 * Node.js & npm installed
-* Python 3.9+ installed
+* Python 3.8+ installed
 * PostgreSQL service running
 
 ### 1. Clone the Repository
@@ -126,6 +126,3 @@ The application will run at `http://localhost:5173`.
 
 ## Contributing
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-This project is licensed under the MIT License.
