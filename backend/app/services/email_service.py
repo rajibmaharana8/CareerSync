@@ -4,14 +4,16 @@ from typing import Dict, List
 import datetime
 
 # Email Configuration
+# Email Configuration
+# Using SSL (465) instead of StartTLS (587) due to Render timeouts
 conf = ConnectionConfig(
     MAIL_USERNAME=settings.MAIL_USERNAME,
     MAIL_PASSWORD=settings.MAIL_PASSWORD,
     MAIL_FROM=settings.MAIL_FROM,
-    MAIL_PORT=settings.MAIL_PORT,
+    MAIL_PORT=465,  # Force Port 465 for SSL
     MAIL_SERVER=settings.MAIL_SERVER,
-    MAIL_STARTTLS=True,
-    MAIL_SSL_TLS=False,
+    MAIL_STARTTLS=False, # Disable StartTLS
+    MAIL_SSL_TLS=True,   # Enable SSL
     USE_CREDENTIALS=True,
     VALIDATE_CERTS=True
 )
