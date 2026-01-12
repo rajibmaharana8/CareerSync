@@ -13,4 +13,5 @@ pymupdf
 fastapi-mail
 jinja2
 google-search-results
-resendsib-api-v3-sdk
+resend
+sib-api-v3-sdk
