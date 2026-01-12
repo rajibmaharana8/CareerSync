@@ -26,7 +26,8 @@ async def send_resume_feedback_email(to_email: str, analysis: Dict, job_role: st
         "current_year": datetime.datetime.now().year
     }
 
-    async def send_worker():
+    def send_worker():
+        print(f"DEBUG: Triggering Official EmailJS for {to_email}...")
         return emailjs.send(template_params)
 
     result = await run_in_threadpool(send_worker)
