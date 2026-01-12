@@ -43,22 +43,11 @@ def root():
 @app.get("/test-email")
 async def test_email_endpoint():
     try:
-        from app.services.email_service import conf, FastMail, MessageSchema, MessageType
-        
-        # Debugging Info (Masking Password)
-        masked_pwd = settings.MAIL_PASSWORD[:2] + "****" if settings.MAIL_PASSWORD else "None"
-        print(f"Testing email to {settings.MAIL_FROM}")
-        print(f"Config: User={settings.MAIL_USERNAME}, Server={settings.MAIL_SERVER}:{settings.MAIL_PORT}, SSL={conf.USE_CREDENTIALS}")
-        
-        message = MessageSchema(
-            subject="CareerSync Email Test",
-            recipients=[settings.MAIL_FROM],
-            body="If you received this, email sending is working!",
-            subtype=MessageType.plain
-        )
-        fm = FastMail(conf)
-        await fm.send_message(message)
-        return {"status": "success", "message": f"Email sent to {settings.MAIL_FROM}"}
+        from app.services.email_service import test_resend_connection
+        result = await test_resend_connection()
+        if result and result.get("id"):
+            return {"status": "success", "message": "Test email sent via Resend!", "resend_id": result.get("id")}
+        return {"status": "error", "message": "Failed to send test email. Check if RESEND_API_KEY is set."}
     except Exception as e:
         print(f"Test Email Failed: {str(e)}")
-        return {"status": "error", "detail": str(e), "config_user": settings.MAIL_USERNAME}
+        return {"status": "error", "message": str(e)}
