@@ -1,51 +1,11 @@
-from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
+import resend
 from app.core.config import settings
 from typing import Dict, List
 import datetime
+import uuid
 
-# Email Configuration
-import socket
-
-def get_ipv4_address(hostname: str) -> str:
-    try:
-        # Resolve to IPv4 (AF_INET)
-        ip = socket.gethostbyname(hostname)
-        print(f"DEBUG: Resolved {hostname} to {ip}")
-        return ip
-    except Exception as e:
-        print(f"DEBUG: Failed to resolve {hostname}: {e}")
-        return hostname
-
-# Email Configuration
-# Resolving IP to valid IPv4 to avoid Render IPv6 Timeouts
-def get_ipv4_address(hostname: str) -> str:
-    try:
-        # Resolve to IPv4 (AF_INET)
-        # Using getaddrinfo to specifically request IPv4 addresses
-        addr_info = socket.getaddrinfo(hostname, None, socket.AF_INET)
-        if addr_info:
-            # Return the first IPv4 address found
-            ip = addr_info[0][4][0]
-            print(f"DEBUG: Resolved {hostname} to IPv4: {ip}")
-            return ip
-        return hostname
-    except Exception as e:
-        print(f"DEBUG: Failed to resolve {hostname} to IPv4: {e}")
-        return hostname
-
-smtp_host = get_ipv4_address("smtp.gmail.com")
-
-conf = ConnectionConfig(
-    MAIL_USERNAME=settings.MAIL_USERNAME,
-    MAIL_PASSWORD=settings.MAIL_PASSWORD,
-    MAIL_FROM=settings.MAIL_FROM,
-    MAIL_PORT=settings.MAIL_PORT,
-    MAIL_SERVER=smtp_host,
-    MAIL_STARTTLS=settings.MAIL_PORT == 587,
-    MAIL_SSL_TLS=settings.MAIL_PORT == 465,
-    USE_CREDENTIALS=True,
-    VALIDATE_CERTS=True
-)
+# Configure Resend
+resend.api_key = settings.RESEND_API_KEY
 
 def format_list_items(items: List[str]) -> str:
     """Helper to format list items into HTML <li> tags."""
@@ -53,14 +13,8 @@ def format_list_items(items: List[str]) -> str:
         return "<li>None identified</li>"
     return "".join(f"<li style='margin-bottom: 5px;'>{item}</li>" for item in items)
 
-import smtplib
-import ssl
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from fastapi.concurrency import run_in_threadpool
-
 async def send_resume_feedback_email(to_email: str, analysis: Dict, job_role: str):
-    """Generates a detailed HTML email and sends it using standard smtplib."""
+    """Generates a detailed HTML email and sends it using Resend API."""
     
     # Extract data safely with defaults
     ats_score = analysis.get("ats_score", 0)
@@ -71,12 +25,10 @@ async def send_resume_feedback_email(to_email: str, analysis: Dict, job_role: st
     improvement_plan = analysis.get("improvement_plan", [])
     motivational_quote = analysis.get("motivational_quote", "Your potential is limitless.")
     
-    # Generate unique ID
-    import uuid
     email_uid = str(uuid.uuid4())[:8]
     current_year = datetime.datetime.now().year
 
-    # HTML Template
+    # HTML Template (Same as before)
     html_content = f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -184,48 +136,24 @@ async def send_resume_feedback_email(to_email: str, analysis: Dict, job_role: st
     </html>
     """
 
-    def send_sync():
-        # Try both the configured server and a fallback Gmail server
-        servers_to_try = [settings.MAIL_SERVER, "smtp.googlemail.com"]
-        port = int(settings.MAIL_PORT)
-        last_error = None
-
-        for host in servers_to_try:
-            try:
-                print(f"DEBUG: Attempting SMTP connection to {host}:{port}...")
-                
-                msg = MIMEMultipart("alternative")
-                msg["Subject"] = f"Executive Report: {job_role} Portfolio Analysis"
-                msg["From"] = settings.MAIL_FROM
-                msg["To"] = to_email
-                msg.attach(MIMEText(html_content, "html"))
-
-                context = ssl.create_default_context()
-                
-                if port == 465:
-                    with smtplib.SMTP_SSL(host, port, context=context, timeout=20) as server:
-                        server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
-                        server.send_message(msg)
-                        print(f"DEBUG: Email sent successfully via {host} (SSL 465)!")
-                        return
-                else:
-                    with smtplib.SMTP(host, port, timeout=20) as server:
-                        if port == 587:
-                            server.starttls(context=context)
-                        server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
-                        server.send_message(msg)
-                        print(f"DEBUG: Email sent successfully via {host} (Port {port})!")
-                        return
-            except Exception as e:
-                print(f"DEBUG: Failed to connect to {host}: {str(e)}")
-                last_error = e
-                continue # Try the next server
+    try:
+        print(f"DEBUG: Attempting to send email via Resend to {to_email}...")
         
-        # If we get here, all servers failed
-        if last_error:
-            raise last_error
-        else:
-            raise Exception("No SMTP servers were reachable")
+        # If using a verified domain, use settings.MAIL_FROM
+        # If just starting, you can use onboarding@resend.dev but only for emails to YOURSELF
+        from_email = settings.MAIL_FROM if settings.MAIL_FROM else "onboarding@resend.dev"
+        
+        params = {
+            "from": f"CareerSync <{from_email}>",
+            "to": [to_email],
+            "subject": f"Executive Report: {job_role} Portfolio Analysis",
+            "html": html_content,
+        }
 
-    # Run blocking SMTP call in a thread to avoid blocking asyncio loop
-    await run_in_threadpool(send_sync)
+        email = resend.Emails.send(params)
+        print(f"DEBUG: SUCCESS! Email sent via Resend. ID: {email['id']}")
+        
+    except Exception as e:
+        print(f"DEBUG: Failed to send email via Resend: {str(e)}")
+        # We don't want to crash the request if email fails, but we print for debugging
+        raise e
