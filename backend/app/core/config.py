@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     MAIL_PORT: int = 587
     MAIL_SERVER: str = "smtp.gmail.com"
     RESEND_API_KEY: str = ""
+    BREVO_API_KEY: str = ""
 
     class Config:
         env_file = ".env"

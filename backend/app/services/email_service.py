@@ -1,12 +1,14 @@
-import resend
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
 from app.core.config import settings
 from typing import Dict, List
 import datetime
 import uuid
 from fastapi.concurrency import run_in_threadpool
 
-# Configure Resend
-resend.api_key = settings.RESEND_API_KEY
+# Configure Brevo
+configuration = sib_api_v3_sdk.Configuration()
+configuration.api_key['api-key'] = settings.BREVO_API_KEY
 
 def format_list_items(items: List[str]) -> str:
     """Helper to format list items into HTML <li> tags."""
@@ -15,7 +17,7 @@ def format_list_items(items: List[str]) -> str:
     return "".join(f"<li style='margin-bottom: 5px;'>{item}</li>" for item in items)
 
 async def send_resume_feedback_email(to_email: str, analysis: Dict, job_role: str):
-    """Generates a detailed HTML email and sends it using Resend API."""
+    """Generates a detailed HTML email and sends it using Brevo API."""
     
     # Extract data safely with defaults
     ats_score = analysis.get("ats_score", 0)
@@ -29,7 +31,7 @@ async def send_resume_feedback_email(to_email: str, analysis: Dict, job_role: st
     email_uid = str(uuid.uuid4())[:8]
     current_year = datetime.datetime.now().year
 
-    # HTML Template
+    # HTML Template (Same as before)
     html_content = f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -139,29 +141,35 @@ async def send_resume_feedback_email(to_email: str, analysis: Dict, job_role: st
 
     def send_call():
         try:
-            print(f"DEBUG: Resend API Key length: {len(settings.RESEND_API_KEY) if settings.RESEND_API_KEY else 0}")
-            print(f"DEBUG: Attempting to send email via Resend to {to_email}...")
+            print(f"DEBUG: Brevo API Key length: {len(settings.BREVO_API_KEY) if settings.BREVO_API_KEY else 0}")
+            print(f"DEBUG: Attempting to send email via Brevo to {to_email}...")
             
-            # Final safety check for from_email
-            from_email = settings.MAIL_FROM if settings.MAIL_FROM and "@" in settings.MAIL_FROM else "onboarding@resend.dev"
+            api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
             
-            params = {
-                "from": f"CareerSync <{from_email}>",
-                "to": [to_email],
-                "subject": f"Executive Portfolio Analysis: {job_role}",
-                "html": html_content,
-            }
+            # Sender details (must be verified in Brevo)
+            sender_email = settings.MAIL_FROM if settings.MAIL_FROM and "@" in settings.MAIL_FROM else "rajibmaharana8200@gmail.com"
+            sender = {"name": "CareerSync", "email": sender_email}
+            
+            to = [{"email": to_email}]
+            subject = f"Executive Portfolio Analysis: {job_role}"
+            
+            send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+                to=to, 
+                html_content=html_content, 
+                sender=sender, 
+                subject=subject
+            )
 
-            email = resend.Emails.send(params)
-            print(f"DEBUG: SUCCESS! Email sent via Resend. Response ID: {email.get('id') if isinstance(email, dict) else 'Unknown'}")
-            return email
+            api_response = api_instance.send_transac_email(send_smtp_email)
+            print(f"DEBUG: SUCCESS! Email sent via Brevo. Message ID: {api_response.message_id}")
+            return api_response
             
+        except ApiException as e:
+            print(f"DEBUG: ERROR in Brevo API call: {str(e)}")
+            raise e
         except Exception as e:
-            print(f"DEBUG: ERROR in Resend API call: {str(e)}")
-            # Specifically log if it's the "onboarding domain" restriction
-            if "onboarding@resend.dev" in str(e) or "403" in str(e):
-                print("HINT: If you catch a 403 error, ensure you are sending to YOUR registered Resend email address (the one you used to sign up).")
+            print(f"DEBUG: Generic error in Brevo sending: {str(e)}")
             raise e
 
-    # Run the blocking Resend call in a background threadpool
+    # Run the blocking Brevo SDK call in a background threadpool
     await run_in_threadpool(send_call)
