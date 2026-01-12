@@ -3,6 +3,7 @@ from app.core.config import settings
 from typing import Dict, List
 import datetime
 import uuid
+from fastapi.concurrency import run_in_threadpool
 
 # Configure Resend
 resend.api_key = settings.RESEND_API_KEY
@@ -28,7 +29,7 @@ async def send_resume_feedback_email(to_email: str, analysis: Dict, job_role: st
     email_uid = str(uuid.uuid4())[:8]
     current_year = datetime.datetime.now().year
 
-    # HTML Template (Same as before)
+    # HTML Template
     html_content = f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -136,24 +137,31 @@ async def send_resume_feedback_email(to_email: str, analysis: Dict, job_role: st
     </html>
     """
 
-    try:
-        print(f"DEBUG: Attempting to send email via Resend to {to_email}...")
-        
-        # If using a verified domain, use settings.MAIL_FROM
-        # If just starting, you can use onboarding@resend.dev but only for emails to YOURSELF
-        from_email = settings.MAIL_FROM if settings.MAIL_FROM else "onboarding@resend.dev"
-        
-        params = {
-            "from": f"CareerSync <{from_email}>",
-            "to": [to_email],
-            "subject": f"Executive Report: {job_role} Portfolio Analysis",
-            "html": html_content,
-        }
+    def send_call():
+        try:
+            print(f"DEBUG: Resend API Key length: {len(settings.RESEND_API_KEY) if settings.RESEND_API_KEY else 0}")
+            print(f"DEBUG: Attempting to send email via Resend to {to_email}...")
+            
+            # Final safety check for from_email
+            from_email = settings.MAIL_FROM if settings.MAIL_FROM and "@" in settings.MAIL_FROM else "onboarding@resend.dev"
+            
+            params = {
+                "from": f"CareerSync <{from_email}>",
+                "to": [to_email],
+                "subject": f"Executive Portfolio Analysis: {job_role}",
+                "html": html_content,
+            }
 
-        email = resend.Emails.send(params)
-        print(f"DEBUG: SUCCESS! Email sent via Resend. ID: {email['id']}")
-        
-    except Exception as e:
-        print(f"DEBUG: Failed to send email via Resend: {str(e)}")
-        # We don't want to crash the request if email fails, but we print for debugging
-        raise e
+            email = resend.Emails.send(params)
+            print(f"DEBUG: SUCCESS! Email sent via Resend. Response ID: {email.get('id') if isinstance(email, dict) else 'Unknown'}")
+            return email
+            
+        except Exception as e:
+            print(f"DEBUG: ERROR in Resend API call: {str(e)}")
+            # Specifically log if it's the "onboarding domain" restriction
+            if "onboarding@resend.dev" in str(e) or "403" in str(e):
+                print("HINT: If you catch a 403 error, ensure you are sending to YOUR registered Resend email address (the one you used to sign up).")
+            raise e
+
+    # Run the blocking Resend call in a background threadpool
+    await run_in_threadpool(send_call)
