@@ -33,7 +33,7 @@ def search_jobs_google(query: str, location: str = "Remote", time_range: str = N
     print(f"DEBUG: Search Query: {query}")
 
     all_cleaned_jobs = []
-    pages_to_fetch = 4 # Target ~40 jobs if available
+    pages_to_fetch = 2 # Target ~20 jobs if available
     
     try:
         next_page_token = None
